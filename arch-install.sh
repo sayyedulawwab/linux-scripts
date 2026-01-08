@@ -46,6 +46,9 @@ confirm "Continue?" || exit 0
 ########################################
 # Partitioning
 ########################################
+info "Wiping old filesystem/LVM/LUKS signatures"
+wipefs -a "$DISK"
+
 info "Partitioning disk"
 
 parted -s "$DISK" mklabel gpt
