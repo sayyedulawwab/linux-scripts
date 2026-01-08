@@ -34,6 +34,8 @@ warn() {
 
 error() {
   echo -e "\e[31mERROR:\e[0m $1"
+  umount -R /mnt || true
+  cryptsetup close cryptlvm || true
   exit 1
 }
 
@@ -49,6 +51,12 @@ run() {
     eval "$@"
   fi
 }
+
+########################################
+# Auto-cleanup on unexpected exit
+########################################
+trap 'warn "Unexpected error, cleaning up..."; umount -R /mnt || true; cryptsetup close cryptlvm || true' ERR
+
 
 ########################################
 # Internet check
@@ -85,7 +93,7 @@ echo
 echo " Disk            : $DISK"
 echo " EFI partition   : $EFI_SIZE  (FAT32)"
 echo " Root LV         : $ROOT_SIZE (ext4)"
-echo " Home LV         : Remaining space (ext4)"
+echo " Home LV         : Remaining (~$(blockdev --getsize64 "$DISK") bytes - 200G - 2G) (ext4)"
 echo " Encryption      : LUKS + LVM"
 echo " Boot mode       : UEFI"
 echo " Dry-run         : $DRY_RUN"
@@ -180,7 +188,7 @@ run "genfstab -U /mnt > /mnt/etc/fstab"
 ########################################
 UUID=$(blkid -s UUID -o value "$LUKS_PART")
 
-cat <<EOF > /mnt/root/chroot-setup.sh
+cat <<EOF > /mnt/chroot-setup.sh
 #!/usr/bin/env bash
 set -euo pipefail
 
@@ -226,14 +234,17 @@ efibootmgr -c -d "$DISK" -p 1 \
   -l '\\EFI\\GRUB\\grubx64.efi'
 EOF
 
-run "chmod +x /mnt/root/chroot-setup.sh"
+run "chmod +x /mnt/chroot-setup.sh"
 
 ########################################
 # Chroot execution
 ########################################
 if ! $DRY_RUN; then
-  arch-chroot /mnt /root/chroot-setup.sh
+  arch-chroot /mnt /chroot-setup.sh
 fi
+
+run "umount -R /mnt || true"
+run "cryptsetup close cryptlvm || true"
 
 ########################################
 # Finish
