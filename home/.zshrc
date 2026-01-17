@@ -88,6 +88,11 @@ source $ZSH/oh-my-zsh.sh
 #   export EDITOR='nvim'
 # fi
 
+export EDITOR=vim
+
+export FZF_DEFAULT_COMMAND='fd --type f --hidden --follow'
+export QT_QPA_PLATFORM=wayland
+
 # Compilation flags
 # export ARCHFLAGS="-arch $(uname -m)"
 
@@ -102,3 +107,4 @@ source $ZSH/oh-my-zsh.sh
 # Example aliases
 # alias zshconfig="mate ~/.zshrc"
 # alias ohmyzsh="mate ~/.oh-my-zsh"
+#
